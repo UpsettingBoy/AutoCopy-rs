@@ -23,7 +23,7 @@ SUBCOMMANDS:
 ## Licenses
 This project is licensed under [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 **AutoCopy** makes use of the following 3º party libraries:
-+ **[app_dir2](https://docs.rs/app_dir2/)**
++ **[app_dirs2](https://docs.rs/app_dirs2/)**
 + **[clap](https://docs.rs/clap/)**
 + **[copy_dir](https://docs.rs/copy_dir/)**
 + **[diesel](https://docs.rs/diesel/)**
