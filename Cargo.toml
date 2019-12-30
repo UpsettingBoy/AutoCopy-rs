@@ -1,0 +1,21 @@
+[package]
+name = "autocopy-rs"
+version = "0.1.0"
+authors = ["Jerónimo Sánchez <jeronimosg@hotmail.es>"]
+edition = "2018"
+license = "Apache-2.0"
+repository = "https://github.com/UpsettingBoy/autocopy-rs"
+readme = "README.md"
+include = ["/LICENSE", "/third_party/**"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+clap = "2.33.0"
+app_dirs2 = "2.0.4"
+diesel = { version = "1.4.3", features = ["sqlite"] }
+diesel_migrations = "1.4.0"
+prettytable-rs = "0.8.0"
+fs2 = "0.4.3"
+copy_dir = "0.1.2"
+fs_extra = "1.1.0"
+time = "0.2.1"
