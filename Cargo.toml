@@ -1,6 +1,6 @@
 [package]
 name = "autocopy-rs"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jerónimo Sánchez <jeronimosg@hotmail.es>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -13,6 +13,7 @@ include = ["/LICENSE", "/third_party/**"]
 clap = "2.33.0"
 app_dirs2 = "2.0.4"
 diesel = { version = "1.4.3", features = ["sqlite"] }
+libsqlite3-sys = { version = "0.9.1", features = ["bundled"] }
 diesel_migrations = "1.4.0"
 prettytable-rs = "0.8.0"
 fs2 = "0.4.3"
