@@ -92,9 +92,11 @@ fn start_command(conn: &SqliteConnection, verbose: bool) {
     let mut map: HashMap<i32, Vec<Folder>> = HashMap::new();
     for row in query {
         let value = map.get_mut(&row.interval);
-        if value.is_some() {
-            value.unwrap().push(row);
-        } else {
+        
+        if let Some(value_un) = value {
+            value_un.push(row);
+        }
+        else {
             map.insert(row.interval, vec![row]);
         }
     }
@@ -147,7 +149,7 @@ fn remove_profile(conn: &SqliteConnection, mat: &ArgMatches) {
 
     let delete = diesel::delete(folders.filter(id.eq(search_id)))
         .execute(conn)
-        .expect(format!("Error deleting profile with ID = {}", search_id).as_str());
+        .unwrap_or_else(|_err| panic!("Error deleting profile with ID = {}", search_id));
 
     if delete == 0 {
         println!("There is no profile with ID = {}", search_id);
@@ -169,7 +171,7 @@ fn display_table(conn: &SqliteConnection) {
         table.add_row(row![row.id, row.name, row.location, row.destiny, format!("{} s", row.interval)]);
     }
 
-    if query.len() != 0 {
+    if query.is_empty() {
         table.printstd();
     }
 }
