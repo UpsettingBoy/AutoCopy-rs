@@ -191,7 +191,7 @@ fn display_table(conn: &SqliteConnection) {
         ]);
     }
 
-    if query.is_empty() {
+    if !query.is_empty() {
         table.printstd();
     }
 }
