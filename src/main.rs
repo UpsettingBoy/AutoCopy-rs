@@ -21,27 +21,28 @@ extern crate diesel_migrations;
 #[macro_use]
 extern crate diesel;
 
-use clap::{clap_app, crate_version, crate_authors, ArgMatches};
-use prettytable::row;
+use clap::{clap_app, crate_authors, crate_version, ArgMatches};
+use diesel::{insert_into, ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
 use prettytable::cell;
-use diesel::{SqliteConnection, insert_into, RunQueryDsl, ExpressionMethods, QueryDsl};
+use prettytable::row;
 use time::Time;
 
+use std::collections::HashMap;
+use std::error::Error;
+use std::thread;
 use std::thread::sleep;
 use std::time::{Duration, SystemTime};
-use std::thread;
-use std::collections::HashMap;
 
-use crate::utils::io::{initialize_folder, lock_execution};
-use crate::utils::db::create_connection;
 use crate::models::{Folder, NewFolder};
+use crate::utils::db::create_connection;
+use crate::utils::io::{initialize_folder, lock_execution};
 
-
-mod utils;
-pub mod schema;
+mod error;
 pub mod models;
+pub mod schema;
+mod utils;
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     //Console help & commands info
     let matches = clap_app!(AutoCopy =>
         (version: crate_version!())
@@ -64,20 +65,23 @@ fn main() {
             (@arg DESTINY: +required "Absolute path where store the copied folder")
             (@arg INTERVAL: +required "Interval between copies (in seconds)")
         )
-    ).get_matches();
+    )
+    .get_matches();
 
-    initialize_folder();
+    initialize_folder()?;
 
-    let conn = create_connection();
+    let conn = create_connection()?;
 
     //Subcommand matching
     match matches.subcommand() {
         ("add", args) => add_entry(&conn, args.expect("No args found!")),
         ("show", _) => display_table(&conn),
         ("remove", args) => remove_profile(&conn, args.expect("No args found!")),
-        ("start", args)  => start_command(&conn, args.unwrap().is_present("verbose")),
-        _ => start_command(&conn, false)
-    }
+        ("start", args) => start_command(&conn, args.unwrap().is_present("verbose")),
+        _ => start_command(&conn, false),
+    };
+
+    Ok(())
 }
 
 ///Copies folders in determined time intervals.
@@ -92,11 +96,10 @@ fn start_command(conn: &SqliteConnection, verbose: bool) {
     let mut map: HashMap<i32, Vec<Folder>> = HashMap::new();
     for row in query {
         let value = map.get_mut(&row.interval);
-        
+
         if let Some(value_un) = value {
             value_un.push(row);
-        }
-        else {
+        } else {
             map.insert(row.interval, vec![row]);
         }
     }
@@ -105,39 +108,46 @@ fn start_command(conn: &SqliteConnection, verbose: bool) {
     let mut handles = Vec::with_capacity(map.len());
 
     for (key, value) in map {
-        handles.push(thread::spawn(move || { //<- Thread initialization
+        handles.push(thread::spawn(move || {
+            //<- Thread initialization
             loop {
                 let start = SystemTime::now();
                 let format_time = Time::now();
 
                 for profile in &value {
                     if verbose {
-                        println!("[{}] Copying profile {}", format_time.format("%T"), profile.name);
+                        println!(
+                            "[{}] Copying profile {}",
+                            format_time.format("%T"),
+                            profile.name
+                        );
                     }
 
                     match profile.do_copy() {
                         Ok(_) => (),
                         Err(err) => {
-                            println!("Profile {} error: {}",profile.name , err);
+                            println!("Profile {} error: {}", profile.name, err);
                             break;
                         }
                     }
 
                     if verbose {
-                        println!("Profile {} took {:#?}", profile.name, start.elapsed().unwrap());
+                        println!(
+                            "Profile {} took {:#?}",
+                            profile.name,
+                            start.elapsed().unwrap()
+                        );
                     }
                 }
-                
+
                 sleep(Duration::from_secs(key as u64));
             }
         }));
     }
 
     //Locking main thread from exiting
-    lock_execution(|| {
-        loop {
-            sleep(Duration::from_secs(5));
-        }
+    lock_execution(|| loop {
+        sleep(Duration::from_secs(5));
     })
 }
 
@@ -145,7 +155,11 @@ fn start_command(conn: &SqliteConnection, verbose: bool) {
 fn remove_profile(conn: &SqliteConnection, mat: &ArgMatches) {
     use schema::folders::dsl::*;
 
-    let search_id = mat.value_of("PROFILE_ID").unwrap().parse::<i32>().expect("PROFILE_ID must be a valid number!");
+    let search_id = mat
+        .value_of("PROFILE_ID")
+        .unwrap()
+        .parse::<i32>()
+        .expect("PROFILE_ID must be a valid number!");
 
     let delete = diesel::delete(folders.filter(id.eq(search_id)))
         .execute(conn)
@@ -168,7 +182,13 @@ fn display_table(conn: &SqliteConnection) {
     table.add_row(row!["ID", "Profile", "Location", "Destiny", "Interval"]);
 
     for row in &query {
-        table.add_row(row![row.id, row.name, row.location, row.destiny, format!("{} s", row.interval)]);
+        table.add_row(row![
+            row.id,
+            row.name,
+            row.location,
+            row.destiny,
+            format!("{} s", row.interval)
+        ]);
     }
 
     if query.is_empty() {
@@ -183,23 +203,23 @@ fn add_entry(conn: &SqliteConnection, mat: &ArgMatches) {
     let name = mat.value_of("NAME").unwrap();
     let location = mat.value_of("LOCATION").unwrap();
     let destiny = mat.value_of("DESTINY").unwrap();
-    let interval = mat.value_of("INTERVAL").unwrap().parse::<i32>().expect("INTERVAL must be a valid number!");
+    let interval = mat
+        .value_of("INTERVAL")
+        .unwrap()
+        .parse::<i32>()
+        .expect("INTERVAL must be a valid number!");
 
     let entry = NewFolder {
         name: name.to_string(),
         location: location.to_string(),
         destiny: destiny.to_string(),
-        interval
+        interval,
     };
 
-    let exec = insert_into(folders::table)
-        .values(entry)
-        .execute(conn);
+    let exec = insert_into(folders::table).values(entry).execute(conn);
 
     match exec {
         Ok(_tam) => (),
-        Err(_err) => println!("Error adding items to database!")
+        Err(_err) => println!("Error adding items to database!"),
     }
 }
-
-

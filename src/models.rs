@@ -16,12 +16,12 @@
     SPDX-License-Identifier: Apache-2.0
 */
 
-use diesel::Queryable;
 use diesel::Insertable;
+use diesel::Queryable;
 
-use std::path::Path;
-use std::error::Error;
 use std::convert::Into;
+use std::error::Error;
+use std::path::Path;
 
 use super::schema::folders;
 
@@ -31,7 +31,7 @@ pub struct Folder {
     pub name: String,
     pub location: String,
     pub destiny: String,
-    pub interval: i32
+    pub interval: i32,
 }
 
 impl Folder {
@@ -54,7 +54,7 @@ impl Folder {
 
         match fs_extra::copy_items(&vec![loc.to_str().unwrap()], des.to_str().unwrap(), &opts) {
             Ok(_) => Ok(()),
-            Err(err) => Err(err.description().to_string())
+            Err(err) => Err(err.description().to_string()),
         }
     }
 }
@@ -65,5 +65,5 @@ pub struct NewFolder {
     pub name: String,
     pub location: String,
     pub destiny: String,
-    pub interval: i32
+    pub interval: i32,
 }
