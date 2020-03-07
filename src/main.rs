@@ -42,6 +42,8 @@ pub mod models;
 pub mod schema;
 mod utils;
 
+const SLEEP_TIME_SECONDS: u64 = 5;
+
 fn main() -> Result<(), Box<dyn Error>> {
     //Console help & commands info
     let matches = clap_app!(AutoCopy =>
@@ -147,7 +149,7 @@ fn start_command(conn: &SqliteConnection, verbose: bool) {
 
     //Locking main thread from exiting
     lock_execution(|| loop {
-        sleep(Duration::from_secs(5));
+        sleep(Duration::from_secs(SLEEP_TIME_SECONDS));
     })
 }
 
