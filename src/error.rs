@@ -19,12 +19,12 @@ impl Error for AutoCopyError {
 
 impl Display for AutoCopyError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "{}", self.description().to_string())
+        write!(f, "{}", self.to_string())
     }
 }
 
 impl From<std::io::Error> for AutoCopyError {
     fn from(err: std::io::Error) -> Self {
-        AutoCopyError::StdIOError(err.description().to_string())
+        AutoCopyError::StdIOError(err.to_string())
     }
 }

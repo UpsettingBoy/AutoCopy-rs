@@ -57,7 +57,6 @@ pub mod io {
     use app_dirs2::{get_app_root, AppDataType};
     use fs2::FileExt;
 
-    use std::error::Error;
     use std::fs;
     use std::fs::File;
     use std::path::PathBuf;
@@ -89,7 +88,7 @@ pub mod io {
         match get_app_root(AppDataType::UserConfig, &APP_DATA) {
             Ok(path) => Ok(path),
             Err(error) => Err(AutoCopyError::ConfigFolderError(
-                error.description().to_string(),
+                error.to_string(),
             )),
         }
     }
