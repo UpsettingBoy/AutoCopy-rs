@@ -40,11 +40,11 @@ impl Folder {
         let des = Path::new(self.destiny.as_str());
 
         if !loc.exists() {
-            return Err(format!("Original path {} do not exists!", loc.display()));
+            return Err(format!("Original path {} does not exists!", loc.display()));
         }
 
         if !des.exists() {
-            return Err(format!("Destiny path {} do not exists!", des.display()));
+            return Err(format!("Destiny path {} does not exists!", des.display()));
         }
 
         let mut opts = fs_extra::dir::CopyOptions::new();
